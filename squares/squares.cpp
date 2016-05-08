@@ -33,12 +33,14 @@ int thresh = 50, N = 11;
 const char* wndname = "Square Detection Demo";
 const char* fltname = "Square Detection Demo - Gray";
 
-void applyFilters(const Mat& src, vector<Mat>& filters) {
+static void applyFilters(const Mat& src, vector<Mat>& filters) {
     assert(src.type() == CV_8UC3);
+
+    filters.clear();
     
     Mat hsv;
     cvtColor(src,hsv,CV_BGR2HSV);
-    
+
     Mat filters0;
     Mat filters1;
     Mat filters2;
@@ -151,7 +153,7 @@ static void findSquares( const Mat& image, vector<vector<Point> >& squares )
 
 
 // the function draws all the squares in the image
-static void drawSquares( Mat& image, const vector<vector<Point> >& squares, Scalar color)
+static void drawSquares( Mat& image, const vector<vector<Point>>& squares, Scalar color)
 {
     for( size_t i = 0; i < squares.size(); i++ )
     {
@@ -162,6 +164,22 @@ static void drawSquares( Mat& image, const vector<vector<Point> >& squares, Scal
 
 }
 
+static void findCenters( const vector<vector<Point>>& squares, vector<Point>& centers) {
+  centers.clear();
+
+  for( size_t i = 0; i < squares.size(); i++) {
+    Point c = (squares[i][0] + squares[i][2])/ 2;
+    centers.push_back(c);
+  }
+}
+
+static void drawCenters( Mat& image, const vector<Point>& centers, Scalar color) {
+    for( size_t i = 0; i < centers.size(); i++ )
+    {
+        Point p = centers[i];
+        circle(image, centers[i], 5, color, 3);
+    }
+}
 
 int main(int /*argc*/, char** /*argv*/)
 {
@@ -170,7 +188,9 @@ int main(int /*argc*/, char** /*argv*/)
     color.push_back(Scalar(0,255,0));
     color.push_back(Scalar(0,0,255));
     help();
-    vector<vector<Point> > squares;
+    vector<Mat> filters;
+    vector<vector<Point>> squares;
+    vector<Point> centers;
     VideoCapture stream(1);   //0 is the id of video device.0 if you have only one camera.
  
     if (!stream.isOpened()) { //check if video device has been initialised
@@ -188,11 +208,12 @@ int main(int /*argc*/, char** /*argv*/)
         }
         Mat image = camImage.clone();
 
-        vector<Mat> filters;
         applyFilters(image, filters);
         for( size_t c = 0; c < filters.size(); c++ ) {
           findSquares(filters[c], squares);
+          findCenters(squares, centers);
           drawSquares(image, squares, color[c]);
+          drawCenters(image, centers, color[c]);
         }
         Mat filtered;
         merge(filters, filtered);
