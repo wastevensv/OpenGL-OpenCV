@@ -31,7 +31,7 @@ static void help()
 
 int thresh = 50, N = 11;
 const char* wndname = "Square Detection Demo";
-const char* gryname = "Square Detection Demo - Gray";
+const char* fltname = "Square Detection Demo - Gray";
 
 void applyFilters(const Mat& src, vector<Mat>& filters) {
     assert(src.type() == CV_8UC3);
@@ -43,15 +43,12 @@ void applyFilters(const Mat& src, vector<Mat>& filters) {
     Mat filters1;
     Mat filters2;
     inRange(hsv, Scalar( 90,  32,  0), Scalar(100, 192, 255), filters0); // Detects Cyan
-    inRange(hsv, Scalar( 30,  32,  0), Scalar( 50, 192, 255), filters1); // Detects Yellow
+    inRange(hsv, Scalar( 30,  64,  0), Scalar( 50, 192, 255), filters1); // Detects Yellow
     inRange(hsv, Scalar(160, 127,  0), Scalar(180, 255, 255), filters2); // Detects Pink
     filters.push_back(filters0);
     filters.push_back(filters1);
     filters.push_back(filters2);
    
-    Mat dst;
-    merge(filters, dst);
-    imshow("Filtered",dst);
 }
 
 // helper function:
@@ -79,8 +76,6 @@ static void findSquares( const Mat& image, vector<vector<Point> >& squares )
     pyrUp(pyr, timg, image.size());
     vector<vector<Point>> contours;
 
-    vector<Mat> channels;
-    applyFilters(image,channels);
 
     // find squares in every color plane of the image
     for( int c = 0; c < 3; c++ )
@@ -110,7 +105,7 @@ static void findSquares( const Mat& image, vector<vector<Point> >& squares )
 //            }
 
             Mat gray;
-            dilate(channels[c], gray, Mat(), Point(-1,-1));
+            dilate(image, gray, Mat(), Point(-1,-1));
 
             // find contours and store them all as a list
             findContours(gray, contours, RETR_LIST, CHAIN_APPROX_SIMPLE);
@@ -156,21 +151,24 @@ static void findSquares( const Mat& image, vector<vector<Point> >& squares )
 
 
 // the function draws all the squares in the image
-static void drawSquares( Mat& image, const vector<vector<Point> >& squares )
+static void drawSquares( Mat& image, const vector<vector<Point> >& squares, Scalar color)
 {
     for( size_t i = 0; i < squares.size(); i++ )
     {
         const Point* p = &squares[i][0];
         int n = (int)squares[i].size();
-        polylines(image, &p, &n, 1, true, Scalar(0,255,0), 3, LINE_AA);
+        polylines(image, &p, &n, 1, true, color, 3, LINE_AA);
     }
 
-    imshow(wndname, image);
 }
 
 
 int main(int /*argc*/, char** /*argv*/)
 {
+    vector<Scalar> color;
+    color.push_back(Scalar(255,0,0));
+    color.push_back(Scalar(0,255,0));
+    color.push_back(Scalar(0,0,255));
     help();
     vector<vector<Point> > squares;
     VideoCapture stream(1);   //0 is the id of video device.0 if you have only one camera.
@@ -181,22 +179,33 @@ int main(int /*argc*/, char** /*argv*/)
     while(true)
     {
         
-        Mat image;
-        stream.read(image);
-        if( image.empty() )
+        Mat camImage;
+        stream.read(camImage);
+        if( camImage.empty() )
         {
             cout << "Couldn't load image" << endl;
             continue;
         }
+        Mat image = camImage.clone();
 
-        findSquares(image, squares);
-        drawSquares(image, squares);
-
+        vector<Mat> filters;
+        applyFilters(image, filters);
+        for( size_t c = 0; c < filters.size(); c++ ) {
+          findSquares(filters[c], squares);
+          drawSquares(image, squares, color[c]);
+        }
+        Mat filtered;
+        merge(filters, filtered);
+        imshow(wndname, image);
+        imshow(fltname, filtered);
+        
         char key = (char)waitKey(10);
         if( key == 27 ) {
             break;
         } else if(key == 'w') {
+            imwrite("camera.png", camImage);
             imwrite("squares.png", image);
+            imwrite("filters.png", filtered);
         }
     }
 
