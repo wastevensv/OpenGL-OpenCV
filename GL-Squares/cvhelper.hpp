@@ -19,24 +19,23 @@ int thresh = 50, N = 11;
 const char* wndname = "Square Detection Demo";
 const char* fltname = "Square Detection Demo - Gray";
 
-static void applyFilters(const Mat& src, vector<Mat>& filters) {
+static void applyFilters(const Mat& src, Mat& filter, const int filterNum) {
     assert(src.type() == CV_8UC3);
-
-    filters.clear();
     
     Mat hsv;
     cvtColor(src,hsv,CV_BGR2HSV);
 
-    Mat filters0;
-    Mat filters1;
-    Mat filters2;
-    inRange(hsv, Scalar( 90,  32,  0), Scalar(100, 192, 255), filters0); // Detects Cyan
-    inRange(hsv, Scalar( 30,  64,  0), Scalar( 50, 192, 255), filters1); // Detects Yellow
-    inRange(hsv, Scalar(160, 127,  0), Scalar(180, 255, 255), filters2); // Detects Pink
-    filters.push_back(filters0);
-    filters.push_back(filters1);
-    filters.push_back(filters2);
-   
+    switch(filterNum) {
+      case 0:
+        inRange(hsv, Scalar( 90,  32,  0), Scalar(100, 192, 255), filter); // Detects Cyan
+        break;
+      case 1:
+        inRange(hsv, Scalar( 30,  64,  0), Scalar( 50, 192, 255), filter); // Detects Yellow
+        break;
+      case 2:
+        inRange(hsv, Scalar(160, 127,  0), Scalar(180, 255, 255), filter); // Detects Pink
+        break;
+    }
 }
 
 // helper function:
@@ -125,41 +124,49 @@ static void drawSquares( Mat& image, const vector<vector<Point>>& squares, Scala
 
 }
 
-static void findCenters( const vector<vector<Point>>& squares, vector<Point>& centers) {
-  centers.clear();
+static void findAnchors( const vector<vector<Point>>& squares, vector<vector<Point>>& anchors) {
+  anchors = vector<vector<Point>>(squares.size());
 
   for( size_t i = 0; i < squares.size(); i++) {
-    Point c = (squares[i][0] + squares[i][2])/ 2;
-    centers.push_back(c);
+    Point c = (squares[i][0] + squares[i][2])/ 2; // Center point
+    Point f = (squares[i][1] + squares[i][2])/ 2; // Midpoint of front edge
+    Point l = (squares[i][2] + squares[i][3])/ 2; // Midpoint of left edge
+    anchors[i].push_back(c);
+    anchors[i].push_back(f);
+    anchors[i].push_back(l);
   }
 }
 
-static void drawCenters( Mat& image, const vector<Point>& centers, Scalar color) {
-    for( size_t i = 0; i < centers.size(); i++ )
+static void drawCenters( Mat& image, const vector<vector<Point>>& anchors, Scalar color) {
+    for( size_t i = 0; i < anchors.size(); i++ )
     {
-        Point p = centers[i];
-        circle(image, centers[i], 5, color, 3);
+        circle(image, anchors[i][0], 5, color, 3);
+        circle(image, anchors[i][1], 5, color, 3);
+        circle(image, anchors[i][2], 5, color, 3);
     }
 }
 
-static void findObjects(Mat& image, vector<Point>& centers, int filter) {
-    vector<Scalar> color;
-    color.push_back(Scalar(255,0,0));
-    color.push_back(Scalar(0,255,0));
-    color.push_back(Scalar(0,0,255));
+static void findObjects(Mat& image, vector<vector<Point>>& anchors, const int filterNum) {
+    Scalar color;
+    switch(filterNum) {
+      case 0:
+        color = Scalar(255,0,0);
+        break;
+      case 1:
+        color = Scalar(0,255,0);
+        break;
+      case 2:
+        color = Scalar(0,0,255);
+        break;
+    }
 
-    vector<Mat> filters;
+    Mat filter;
     vector<vector<Point>> squares;
 
-    applyFilters(image, filters);
-    
-    findSquares(filters[filter], squares);
-    findCenters(squares, centers);
-    drawSquares(image, squares, color[filter]);
-    drawCenters(image, centers, color[filter]);
-        
-    Mat filtered;
-    merge(filters, filtered);
-    imshow(wndname, image);
-    imshow(fltname, filtered);
+    applyFilters(image, filter, filterNum);   
+ 
+    findSquares(filter, squares);
+    findAnchors(squares, anchors);
+    drawSquares(image, squares, color);
+    drawCenters(image, anchors, color);
 }

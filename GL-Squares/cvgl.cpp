@@ -13,10 +13,12 @@
 #include <iostream>
 #include <cstdio>
 #include <string>
+#include <cmath>
 #include <cstring>
 #include <fstream>
 #include <streambuf>
 
+#include "objhelper.hpp"
 #include "cvhelper.hpp"
 #include "shaders.h"
 
@@ -111,9 +113,17 @@ int main()
     GLuint axis_vbo;
     glGenBuffers(1, &axis_vbo);
     glBindBuffer(GL_ARRAY_BUFFER, axis_vbo);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(axis_vertices),
-                                  axis_vertices, GL_STATIC_DRAW);
-    
+
+//    vector<glm::vec3> objVertices;
+//    bool res = loadOBJ("cube.obj", objVertices, vector<glm::vec2>(),
+//                                                vector<glm::vec3>());
+//    if(res) {
+//      glBufferData(GL_ARRAY_BUFFER, objVertices.size() * sizeof(glm::vec3),
+//                                    &objVertices[0], GL_STATIC_DRAW);
+//    } else {
+      glBufferData(GL_ARRAY_BUFFER, sizeof(axis_vertices),
+                                    axis_vertices, GL_STATIC_DRAW);
+//    }
     glBindVertexArray(0);
 
     // Compile color vertex shader
@@ -322,14 +332,14 @@ int main()
     glEnableClientState(GL_VERTEX_ARRAY);
     float xco = 0.0f;
     float yco = 0.0f;
+    float angle = 0.0f;
+    float scale = 0.2f;
     // --- Main Loop ---
     while(!glfwWindowShouldClose(window))
     {
         // Reset
         glClearColor(0.5f, 0.5f, 0.5f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-       
-
 
         // Move camera
         //GLfloat radius = 2.0f;
@@ -342,16 +352,44 @@ int main()
         // Capture Image
         cv::Mat cameraFrame;
         stream1 >> cameraFrame;
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB,
-                      cameraFrame.cols, cameraFrame.rows, 0, GL_BGR,
-                      GL_UNSIGNED_BYTE, cameraFrame.data);
-        glGenerateMipmap(GL_TEXTURE_2D);
 
+        // Process Image
+        cv::Mat processedFrame = cameraFrame.clone();
+        vector<vector<cv::Point>> anchors;
 
-        // Draw Backboard
+        // Find object.
+        findObjects(processedFrame, anchors, 0);
+        if (anchors.size() != 0) {
+            float dx, dy;
+            
+            xco = ((float)anchors[0][0].x / processedFrame.cols);
+            yco = ((float)anchors[0][0].y / processedFrame.rows);
+
+            if(anchors[0][1].y > anchors[0][2].y) {
+              dx = (anchors[0][1].x - anchors[0][0].x);
+              dy = (anchors[0][1].y - anchors[0][0].y);
+            } else {
+              dx = (anchors[0][2].x - anchors[0][0].x);
+              dy = (anchors[0][2].y - anchors[0][0].y);
+            }
+
+            scale = 2*(dy/processedFrame.rows);
+            angle = -atan(dx/dy);
+
+            cerr << "#" << anchors[0][0].x << ", \t" << anchors[0][0].y << endl;
+            cerr << "!" << xco << ", \t" << yco << ", \t" << endl;
+            cerr << " " << angle << ", \t" << scale <<endl;
+        }
+
+        // Draw Baseboard
         model = glm::mat4();
 
-        glUseProgram(prettyShaderProgram);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB,
+                      processedFrame.cols, processedFrame.rows, 0, GL_BGR,
+                      GL_UNSIGNED_BYTE, processedFrame.data);
+        glGenerateMipmap(GL_TEXTURE_2D);
+
+        glUseProgram(blankShaderProgram);
         glUniformMatrix4fv(glGetUniformLocation(prettyShaderProgram, "view"),
           1, GL_FALSE, glm::value_ptr(view));
         glUniformMatrix4fv(glGetUniformLocation(prettyShaderProgram, "proj"),
@@ -363,13 +401,18 @@ int main()
           glDrawArrays(GL_TRIANGLES, 0, 6);
         glBindVertexArray(0);
 
-        // Draw Baseboard
+        // Draw Backboard
         model = glm::rotate(
                   model,
                   glm::radians(90.0f),
                   glm::vec3(1.0f, 0.0f, 0.0f)
                 );
-
+        
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB,
+                      cameraFrame.cols, cameraFrame.rows, 0, GL_BGR,
+                      GL_UNSIGNED_BYTE, cameraFrame.data);
+        glGenerateMipmap(GL_TEXTURE_2D);
+        
         glUseProgram(blankShaderProgram);
         glUniformMatrix4fv(glGetUniformLocation(blankShaderProgram, "view"),
           1, GL_FALSE, glm::value_ptr(view));
@@ -384,19 +427,9 @@ int main()
 
         // Draw Axis
         model = glm::mat4();
-
-        // Process Image
-        cv::Mat processedFrame = cameraFrame.clone();
-        vector<cv::Point> centers;
-        findObjects(processedFrame, centers, 0);
-
-        if (centers.size() != 0) {
-            xco = ((float)centers[0].x / processedFrame.cols);
-            yco = ((float)centers[0].y / processedFrame.rows);
-            cerr << "#" << centers[0].x << ", " << centers[1].y << endl;
-            cerr << "!" << xco << ", " << yco << endl;
-        }
-        model = glm::translate(glm::mat4(1.0f), glm::vec3(xco, yco, 0.0f));
+        model = glm::translate(model, glm::vec3(xco, yco, 0.0f));
+        model = glm::rotate(model, angle, glm::vec3(0.0f, 0.0f, 1.0f));
+        model = glm::scale(model, glm::vec3(scale));
 
         glUseProgram(colorShaderProgram);
         glUniformMatrix4fv(glGetUniformLocation(colorShaderProgram, "view"),
@@ -407,7 +440,7 @@ int main()
                 1, GL_FALSE, glm::value_ptr(model));
 
         glBindVertexArray(axis_vao);
-        glDrawArrays(GL_LINES, 0, 6);
+          glDrawArrays(GL_LINES, 0, 6);
         glBindVertexArray(0);
 
         //Display
