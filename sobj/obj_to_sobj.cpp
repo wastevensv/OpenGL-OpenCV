@@ -14,8 +14,7 @@ void convert(string path, vector<Vert<float, 6>> & out_vert) {
   ifstream in_file;
   in_file.open (path);
 
-  if (in_file.is_open())
-  {
+  if (in_file.is_open()) {
     vector<Vert<float, 6>> tmp_vert;
     vector<Vert<int, 3>> tmp_index;
     string line;
@@ -27,11 +26,10 @@ void convert(string path, vector<Vert<float, 6>> & out_vert) {
       string header;
       line_s >> header;
 
-      if(header.compare("#") != 0) {
+      if(header[0] != '#') {
         if(header.compare("v") == 0) {
           Vert<float, 6> data;
           sscanf(line.c_str(), "v %f %f %f", &data[0], &data[1], &data[2]);
-          cout << line << "|" << data << endl;
 
           tmp_vert.push_back(data);
 
@@ -40,9 +38,16 @@ void convert(string path, vector<Vert<float, 6>> & out_vert) {
 
           char skip = '\0';
 
-          sscanf(line.c_str(), "f %d/%d/%d %d/%d/%d %d/%d/%d\n", &data[0], &data[1],
-            &data[2],&data[3],&data[4],&data[5],&data[6],&data[7],&data[8]);
-          cout << line << "|" << data << endl;
+          int ret = sscanf(line.c_str(), "f %d/%d/%d %d/%d/%d %d/%d/%d\n", &data[0], &data[1],
+              &data[2],&data[3],&data[4],&data[5],&data[6],&data[7],&data[8]);
+          if(ret!=9) {
+            ret = sscanf(line.c_str(), "f %d %d %d\n",
+              &data[0], &data[3], &data[6]);
+            if(ret!=3) {
+              cerr << "Parsing failed." << endl;
+              return;
+            }
+          }
 
           Vert<int, 3> index;
           index[0] = data[0] - 1;
