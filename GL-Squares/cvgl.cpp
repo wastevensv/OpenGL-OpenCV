@@ -18,8 +18,9 @@
 #include <fstream>
 #include <streambuf>
 
-#include "objhelper.hpp"
+#include "sobjhelper.hpp"
 #include "cvhelper.hpp"
+#include "verts.hpp"
 #include "shaders.h"
 
 float backdrop_vert[] = {
@@ -114,17 +115,12 @@ int main()
     glGenBuffers(1, &axis_vbo);
     glBindBuffer(GL_ARRAY_BUFFER, axis_vbo);
 
-//    vector<glm::vec3> objVertices;
-//    bool res = loadOBJ("cube.obj", objVertices, vector<glm::vec2>(),
-//                                                vector<glm::vec3>());
-//    if(res) {
-//      glBufferData(GL_ARRAY_BUFFER, objVertices.size() * sizeof(glm::vec3),
-//                                    &objVertices[0], GL_STATIC_DRAW);
-//    } else {
-      glBufferData(GL_ARRAY_BUFFER, sizeof(axis_vertices),
-                                    axis_vertices, GL_STATIC_DRAW);
-//    }
-    glBindVertexArray(0);
+    vector<Vert<float, 6>> objVertices;
+    int obj_length;
+    load_sobj("object.sobj", objVertices);
+    glBufferData(GL_ARRAY_BUFFER, objVertices.size() * sizeof(Vert<float, 6>),
+                                  &objVertices[0], GL_STATIC_DRAW);
+    obj_length = objVertices.size();
 
     // Compile color vertex shader
     GLuint colorVert = glCreateShader(GL_VERTEX_SHADER);
@@ -291,8 +287,8 @@ int main()
 
     // Setup view
     glm::mat4 view = glm::lookAt(
-                   glm::vec3( 0.5f,  2.0f,  1.5f),
-                   glm::vec3( 0.5f,  0.0f,  0.0f),
+                   glm::vec3( 0.5f,  2.0f,  0.5f),
+                   glm::vec3( 0.5f,  0.0f,  0.5f),
                    glm::vec3( 0.0f,  0.0f,  1.0f)
                    );
     glm::mat4 proj = 
@@ -440,7 +436,7 @@ int main()
                 1, GL_FALSE, glm::value_ptr(model));
 
         glBindVertexArray(axis_vao);
-          glDrawArrays(GL_LINES, 0, 6);
+          glDrawArrays(GL_TRIANGLES, 0, obj_length);
         glBindVertexArray(0);
 
         //Display
