@@ -23,6 +23,8 @@
 #include "verts.hpp"
 #include "shaders.h"
 
+#define STATIC_IMAGES
+
 float backdrop_vert[] = {
 //  Position             Texture
      1.0f,  0.0f,  0.0f, 1.0f, 0.0f, // Bottom Right
@@ -51,7 +53,11 @@ int main()
     
     // --- OpenCV Init ---
     //0 is the id of video device. 0 if you have only one camera.
+    #ifdef STATIC_IMAGES
+    cv::VideoCapture stream1("samples/%02d.jpg");
+    #else
     cv::VideoCapture stream1(1);
+    #endif
 
     if (!stream1.isOpened()) { //check if video device has been initialised
             std::cerr << "cannot open camera" << std::endl;
@@ -330,6 +336,7 @@ int main()
     float yco = 0.0f;
     float angle = 0.0f;
     float scale = 0.2f;
+    int frame_num = 0;
     // --- Main Loop ---
     while(!glfwWindowShouldClose(window))
     {
@@ -348,6 +355,7 @@ int main()
         // Capture Image
         cv::Mat cameraFrame;
         stream1 >> cameraFrame;
+        if( cameraFrame.empty() ) break;
 
         // Process Image
         cv::Mat processedFrame = cameraFrame.clone();
@@ -442,6 +450,18 @@ int main()
         //Display
         glfwSwapBuffers(window);
         glfwPollEvents();
+        
+        //Save Screenshot
+        #ifdef STATIC_IMAGES
+        char filename[] = "out_XX.bmp";
+        sprintf(filename, "out_%02d.bmp", frame_num++);
+        SOIL_save_screenshot
+	(
+		filename,
+		SOIL_SAVE_TYPE_BMP,
+		0, 0, 800, 600
+	);
+        #endif
     }
 
     // --- Cleanup/Shutdown ---
