@@ -15,7 +15,7 @@ This is an informal changelog for an informal project. The general format should
 ## [2016-05-12]
 ### Updates
 * Tried rendering OBJ files using OpenGL. Too complicated to load.
-* Created a program to convert OBJ files to a space seperated list of vertexes (I call them SOBJ files).
+* Created a program to convert OBJ files to a space separated list of vertexes (I call them SOBJ files).
 
 ### Bugs
 * SOBJ files don't seem to be rendering properly either. Need to create a simple sample and test it.
@@ -30,6 +30,8 @@ This is an informal changelog for an informal project. The general format should
 * Started repository. Contains a few older demos and squares demo.
 * Squares detects the outline and center of sticky notes.
 
-[2016-05-12]: https://github.com/wastevensv/OpenGL-OpenCV/compare/master@%7B2016-05-10%7D...master@%7B2016-05-12%7D
-[2016-05-11]: https://github.com/wastevensv/OpenGL-OpenCV/compare/master@%7B2016-05-10%7D...master@%7B2016-05-12%7D
-[2016-05-08 - 2016-05-10]: https://github.com/wastevensv/OpenGL-OpenCV/compare/master@%7B2016-05-08%7D...master@%7B2016-05-09%7D
+[olivierlacan/keep-a-changelog]: https://github.com/olivierlacan/keep-a-changelog
+[2016-05-13]: https://github.com/wastevensv/OpenGL-OpenCV/compare/006883...962e4b
+[2016-05-12]: https://github.com/wastevensv/OpenGL-OpenCV/commit/006883
+[2016-05-11]: https://github.com/wastevensv/OpenGL-OpenCV/compare/9e1daa...b1d899
+[2016-05-08 - 2016-05-10]: https://github.com/wastevensv/OpenGL-OpenCV/compare/9195a61...9e1daa
