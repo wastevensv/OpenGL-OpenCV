@@ -5,9 +5,14 @@ This is an informal changelog for an informal project. The general format should
 * Render multiple models on multiple sticky notes.
 * Render different types of models on different sticky notes.
 
+## [2016-05-14]
+### Additions
+* GL-Squares: Added sample image files and ability to export screenshots.
+* Compile flag STATIC\_IMAGES controls whether to capture from webcam or read images.
+
 ## [2016-05-13]
 ### Updates
-* GL-Sqaures now renders an sobj model on top of a sticky note.
+* GL-Squares now renders an sobj model on top of a sticky note.
 
 ### Additions
 * I made a model of a BB8-like droid. That is in the sobj folder.
@@ -22,7 +27,7 @@ This is an informal changelog for an informal project. The general format should
 
 ## [2016-05-11]
 ### Updates
-* Completed work on squares. Active development is now on GL-Sqaures.
+* Completed work on squares. Active development is now on GL-Squares.
 * GL-Squares can track a sticky note's position, scale, and rotation.
 
 ## [2016-05-08 - 2016-05-10]
@@ -31,7 +36,8 @@ This is an informal changelog for an informal project. The general format should
 * Squares detects the outline and center of sticky notes.
 
 [olivierlacan/keep-a-changelog]: https://github.com/olivierlacan/keep-a-changelog
+[2016-05-14]: https://github.com/wastevensv/OpenGL-OpenCV/compare/962e4b...0c5e82
 [2016-05-13]: https://github.com/wastevensv/OpenGL-OpenCV/compare/006883...962e4b
-[2016-05-12]: https://github.com/wastevensv/OpenGL-OpenCV/commit/006883
+[2016-05-12]: https://github.com/wastevensv/OpenGL-OpenCV/compare/b1d899...006883
 [2016-05-11]: https://github.com/wastevensv/OpenGL-OpenCV/compare/9e1daa...b1d899
 [2016-05-08 - 2016-05-10]: https://github.com/wastevensv/OpenGL-OpenCV/compare/9195a61...9e1daa
