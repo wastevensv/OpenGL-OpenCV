@@ -2,8 +2,11 @@
 This is an informal changelog for an informal project. The general format should be similar to [olivierlacan/keep-a-changelog]. This is primarily for my own record keeping. However I hope to use this as an opportunity to form good habits. Constructive feedback is encouraged.
 
 ## To-Do
-* Render multiple models on multiple sticky notes.
 * Render different types of models on different sticky notes.
+
+## [2016-05-15]
+### Additions
+* GL-Squares: Renders models on multiple sticky notes.
 
 ## [2016-05-14]
 ### Additions
@@ -36,6 +39,7 @@ This is an informal changelog for an informal project. The general format should
 * Squares detects the outline and center of sticky notes.
 
 [olivierlacan/keep-a-changelog]: https://github.com/olivierlacan/keep-a-changelog
+[2016-05-15]: https://github.com/wastevensv/OpenGL-OpenCV/compare/0c5e82...e799e8
 [2016-05-14]: https://github.com/wastevensv/OpenGL-OpenCV/compare/962e4b...0c5e82
 [2016-05-13]: https://github.com/wastevensv/OpenGL-OpenCV/compare/006883...962e4b
 [2016-05-12]: https://github.com/wastevensv/OpenGL-OpenCV/compare/b1d899...006883
