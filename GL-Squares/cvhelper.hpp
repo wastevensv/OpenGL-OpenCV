@@ -19,7 +19,7 @@ int thresh = 50, N = 11;
 const char* wndname = "Square Detection Demo";
 const char* fltname = "Square Detection Demo - Gray";
 
-static void applyFilters(const Mat& src, Mat& filter, const int filterNum) {
+static void applyFilter(const Mat& src, Mat& filter, const int filterNum) {
     assert(src.type() == CV_8UC3);
     
     Mat hsv;
@@ -27,7 +27,7 @@ static void applyFilters(const Mat& src, Mat& filter, const int filterNum) {
 
     switch(filterNum) {
       case 0:
-        inRange(hsv, Scalar( 90,  32,  0), Scalar(100, 192, 255), filter); // Detects Cyan
+        inRange(hsv, Scalar( 90,  32,  0), Scalar(120, 192, 255), filter); // Detects Cyan
         break;
       case 1:
         inRange(hsv, Scalar( 30,  64,  0), Scalar( 50, 192, 255), filter); // Detects Yellow
@@ -163,7 +163,7 @@ static void findObjects(Mat& image, vector<vector<Point>>& anchors, const int fi
     Mat filter;
     vector<vector<Point>> squares;
 
-    applyFilters(image, filter, filterNum);   
+    applyFilter(image, filter, filterNum);   
  
     findSquares(filter, squares);
     findAnchors(squares, anchors);

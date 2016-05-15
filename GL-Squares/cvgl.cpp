@@ -23,7 +23,7 @@
 #include "verts.hpp"
 #include "shaders.h"
 
-#define STATIC_IMAGES
+//#define STATIC_IMAGES
 
 float backdrop_vert[] = {
 //  Position             Texture
@@ -47,6 +47,19 @@ float axis_vertices[] = {
      0.0f,  0.0f,  0.0f, 1.0f, 1.0f,  1.0f, // Origin
      0.0f,  0.0f,  1.0f, 0.0f, 0.0f,  1.0f, // Z Line
 };
+
+void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
+{
+    if (key == GLFW_KEY_W && action == GLFW_PRESS ){
+        char filename[] = "out.bmp";
+        SOIL_save_screenshot
+	(
+		filename,
+		SOIL_SAVE_TYPE_BMP,
+		0, 0, 800, 600
+	);
+    }
+}
 
 int main()
 {
@@ -76,6 +89,7 @@ int main()
                                       "OpenGL", nullptr, nullptr); // Windowed
     if(window == NULL) return 2;
     glfwMakeContextCurrent(window);
+    glfwSetKeyCallback(window, key_callback);
     
     // --- GLEW/GL Init ---
     glewExperimental = GL_TRUE;
@@ -332,18 +346,18 @@ int main()
 
     glEnable(GL_DEPTH_TEST);
     glEnableClientState(GL_VERTEX_ARRAY);
-    float xco = 0.0f;
-    float yco = 0.0f;
-    float angle = 0.0f;
-    float scale = 0.2f;
-    int frame_num = 0;
+   int frame_num = 0;
     // --- Main Loop ---
     while(!glfwWindowShouldClose(window))
     {
         // Reset
         glClearColor(0.5f, 0.5f, 0.5f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
+        vector<float> xco;
+        vector<float> yco;
+        vector<float> angle;
+        vector<float> scale;
+ 
         // Move camera
         //GLfloat radius = 2.0f;
         //GLfloat camX = sin(glfwGetTime()) * radius;
@@ -364,25 +378,28 @@ int main()
         // Find object.
         findObjects(processedFrame, anchors, 0);
         if (anchors.size() != 0) {
-            float dx, dy;
+            for(int i = 0; i < anchors.size(); i++) {
+              float dx, dy;
             
-            xco = ((float)anchors[0][0].x / processedFrame.cols);
-            yco = ((float)anchors[0][0].y / processedFrame.rows);
+              xco.push_back((float)anchors[i][0].x / processedFrame.cols);
+              yco.push_back((float)anchors[i][0].y / processedFrame.rows);
 
-            if(anchors[0][1].y > anchors[0][2].y) {
-              dx = (anchors[0][1].x - anchors[0][0].x);
-              dy = (anchors[0][1].y - anchors[0][0].y);
-            } else {
-              dx = (anchors[0][2].x - anchors[0][0].x);
-              dy = (anchors[0][2].y - anchors[0][0].y);
+              if(anchors[i][1].y > anchors[i][2].y) {
+                dx = (anchors[i][1].x - anchors[i][0].x);
+                dy = (anchors[i][1].y - anchors[i][0].y);
+              } else {
+                dx = (anchors[i][2].x - anchors[i][0].x);
+                dy = (anchors[i][2].y - anchors[i][0].y);
+              }
+
+              scale.push_back(2*(dy/processedFrame.rows));
+              angle.push_back(-atan(dx/dy));
             }
-
-            scale = 2*(dy/processedFrame.rows);
-            angle = -atan(dx/dy);
-
-            cerr << "#" << anchors[0][0].x << ", \t" << anchors[0][0].y << endl;
-            cerr << "!" << xco << ", \t" << yco << ", \t" << endl;
-            cerr << " " << angle << ", \t" << scale <<endl;
+            cerr << frame_num <<"--------" << endl;
+            for(int i = 0; i < xco.size(); i++) {
+              cerr << i << ":" << xco[i] << ", \t" << yco[i] << endl;
+              cerr << "  " << angle[i] << ", \t" << scale[i] << endl;
+            }
         }
 
         // Draw Baseboard
@@ -429,32 +446,35 @@ int main()
           glDrawArrays(GL_TRIANGLES, 0, 6);
         glBindVertexArray(0);
 
-        // Draw Axis
-        model = glm::mat4();
-        model = glm::translate(model, glm::vec3(xco, yco, 0.0f));
-        model = glm::rotate(model, angle, glm::vec3(0.0f, 0.0f, 1.0f));
-        model = glm::scale(model, glm::vec3(scale));
+        // Draw Object
+        for(int i = 0; i < xco.size(); i++) {
+          model = glm::mat4();
+          model = glm::translate(model, glm::vec3(xco[i], yco[i], 0.0f));
+          model = glm::rotate(model, angle[i], glm::vec3(0.0f, 0.0f, 1.0f));
+          model = glm::scale(model, glm::vec3(scale[i]));
 
-        glUseProgram(colorShaderProgram);
-        glUniformMatrix4fv(glGetUniformLocation(colorShaderProgram, "view"),
-                1, GL_FALSE, glm::value_ptr(view));
-        glUniformMatrix4fv(glGetUniformLocation(colorShaderProgram, "proj"),
-                1, GL_FALSE, glm::value_ptr(proj));
-        glUniformMatrix4fv(glGetUniformLocation(colorShaderProgram, "model"),
-                1, GL_FALSE, glm::value_ptr(model));
+          glUseProgram(colorShaderProgram);
+          glUniformMatrix4fv(glGetUniformLocation(colorShaderProgram, "view"),
+                  1, GL_FALSE, glm::value_ptr(view));
+          glUniformMatrix4fv(glGetUniformLocation(colorShaderProgram, "proj"),
+                  1, GL_FALSE, glm::value_ptr(proj));
+          glUniformMatrix4fv(glGetUniformLocation(colorShaderProgram, "model"),
+                  1, GL_FALSE, glm::value_ptr(model));
 
-        glBindVertexArray(axis_vao);
-          glDrawArrays(GL_TRIANGLES, 0, obj_length);
-        glBindVertexArray(0);
-
+          glBindVertexArray(axis_vao);
+            glDrawArrays(GL_TRIANGLES, 0, obj_length);
+          glBindVertexArray(0);
+        }
+        
         //Display
         glfwSwapBuffers(window);
         glfwPollEvents();
         
+        frame_num++;
         //Save Screenshot
         #ifdef STATIC_IMAGES
         char filename[] = "out_XX.bmp";
-        sprintf(filename, "out_%02d.bmp", frame_num++);
+        sprintf(filename, "out_%02d.bmp", frame_num);
         SOIL_save_screenshot
 	(
 		filename,
