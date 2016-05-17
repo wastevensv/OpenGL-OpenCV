@@ -146,8 +146,9 @@ static void drawCenters( Mat& image, const vector<vector<Point>>& anchors, Scala
     }
 }
 
-static void findObjects(Mat& image, vector<vector<Point>>& anchors, const int filterNum) {
+static void findObjects(Mat& image, vector<vector<float>>& poses, const int filterNum) {
     Scalar color;
+    vector<vector<Point>> anchors;
     switch(filterNum) {
       case 0:
         color = Scalar(255,0,0);
@@ -169,4 +170,24 @@ static void findObjects(Mat& image, vector<vector<Point>>& anchors, const int fi
     findAnchors(squares, anchors);
     drawSquares(image, squares, color);
     drawCenters(image, anchors, color);
+
+    poses = vector<vector<float>>(anchors.size());
+    for(int i = 0; i < anchors.size(); i++) {
+      float dx, dy;
+      poses[i].reserve(4);
+
+      poses[i].push_back((float)anchors[i][0].x / image.cols);
+      poses[i].push_back((float)anchors[i][0].y / image.rows);
+
+      if(anchors[i][1].y > anchors[i][2].y) {
+        dx = (anchors[i][1].x - anchors[i][0].x);
+        dy = (anchors[i][1].y - anchors[i][0].y);
+      } else {
+        dx = (anchors[i][2].x - anchors[i][0].x);
+        dy = (anchors[i][2].y - anchors[i][0].y);
+      }
+
+      poses[i].push_back(-atan(dx/dy));
+      poses[i].push_back(1.5*(dy/image.rows));
+    }
 }

@@ -23,7 +23,7 @@
 #include "verts.hpp"
 #include "shaders.h"
 
-//#define STATIC_IMAGES
+#define STATIC_IMAGES
 
 float backdrop_vert[] = {
 //  Position             Texture
@@ -48,9 +48,13 @@ float axis_vertices[] = {
      0.0f,  0.0f,  1.0f, 0.0f, 0.0f,  1.0f, // Z Line
 };
 
+cv::Mat cameraFrame;
+cv::VideoCapture stream1;
+
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
-    if (key == GLFW_KEY_W && action == GLFW_PRESS ){
+    if(action == GLFW_PRESS ){
+      if(key == GLFW_KEY_W) { 
         char filename[] = "out.bmp";
         SOIL_save_screenshot
 	(
@@ -58,6 +62,15 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 		SOIL_SAVE_TYPE_BMP,
 		0, 0, 800, 600
 	);
+      }
+    #ifdef STATIC_IMAGES
+    } else if(key == GLFW_KEY_N) {
+        // Capture Image
+        stream1 >> cameraFrame;
+        if( cameraFrame.empty() ) {
+         exit(0);
+        }
+    #endif
     }
 }
 
@@ -67,9 +80,9 @@ int main()
     // --- OpenCV Init ---
     //0 is the id of video device. 0 if you have only one camera.
     #ifdef STATIC_IMAGES
-    cv::VideoCapture stream1("samples/%02d.jpg");
+    stream1 = VideoCapture("samples/%02d.jpg");
     #else
-    cv::VideoCapture stream1(1);
+    stream1 = VideoCapture(1);
     #endif
 
     if (!stream1.isOpened()) { //check if video device has been initialised
@@ -346,17 +359,17 @@ int main()
 
     glEnable(GL_DEPTH_TEST);
     glEnableClientState(GL_VERTEX_ARRAY);
-   int frame_num = 0;
+    int frame_num = 0;
+    // Capture Image
+    stream1 >> cameraFrame;
+    if( cameraFrame.empty() ) exit(-1);
+
     // --- Main Loop ---
     while(!glfwWindowShouldClose(window))
     {
         // Reset
         glClearColor(0.5f, 0.5f, 0.5f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        vector<float> xco;
-        vector<float> yco;
-        vector<float> angle;
-        vector<float> scale;
  
         // Move camera
         //GLfloat radius = 2.0f;
@@ -366,40 +379,22 @@ int main()
         //        glm::vec3(0.0f, 0.0f, 0.0f),
         //        glm::vec3(0.0f, 0.0f, 1.0f));
 
+        #ifndef STATIC_IMAGES
         // Capture Image
-        cv::Mat cameraFrame;
         stream1 >> cameraFrame;
         if( cameraFrame.empty() ) break;
+        #endif
 
-        // Process Image
+        // Clone Image
         cv::Mat processedFrame = cameraFrame.clone();
-        vector<vector<cv::Point>> anchors;
+        vector<vector<float>> poses;
 
-        // Find object.
-        findObjects(processedFrame, anchors, 0);
-        if (anchors.size() != 0) {
-            for(int i = 0; i < anchors.size(); i++) {
-              float dx, dy;
-            
-              xco.push_back((float)anchors[i][0].x / processedFrame.cols);
-              yco.push_back((float)anchors[i][0].y / processedFrame.rows);
-
-              if(anchors[i][1].y > anchors[i][2].y) {
-                dx = (anchors[i][1].x - anchors[i][0].x);
-                dy = (anchors[i][1].y - anchors[i][0].y);
-              } else {
-                dx = (anchors[i][2].x - anchors[i][0].x);
-                dy = (anchors[i][2].y - anchors[i][0].y);
-              }
-
-              scale.push_back(2*(dy/processedFrame.rows));
-              angle.push_back(-atan(dx/dy));
-            }
-            cerr << frame_num <<"--------" << endl;
-            for(int i = 0; i < xco.size(); i++) {
-              cerr << i << ":" << xco[i] << ", \t" << yco[i] << endl;
-              cerr << "  " << angle[i] << ", \t" << scale[i] << endl;
-            }
+        // Find objects and estimate poses.
+        findObjects(processedFrame, poses, 0);
+        cerr << frame_num <<"--------" << endl;
+        for(int i = 0; i < poses.size(); i++) {
+          cerr << i << ":" << poses[i][0] << ", \t" << poses[i][1] << endl;
+          cerr <<     "  " << poses[i][2] << ", \t" << poses[i][3] << endl;
         }
 
         // Draw Baseboard
@@ -446,12 +441,12 @@ int main()
           glDrawArrays(GL_TRIANGLES, 0, 6);
         glBindVertexArray(0);
 
-        // Draw Object
-        for(int i = 0; i < xco.size(); i++) {
+        // Draw Objects
+        for(int i = 0; i < poses.size(); i++) {
           model = glm::mat4();
-          model = glm::translate(model, glm::vec3(xco[i], yco[i], 0.0f));
-          model = glm::rotate(model, angle[i], glm::vec3(0.0f, 0.0f, 1.0f));
-          model = glm::scale(model, glm::vec3(scale[i]));
+          model = glm::translate(model, glm::vec3(poses[i][0], poses[i][1], 0.0f));
+          model = glm::rotate(model, poses[i][2], glm::vec3(0.0f, 0.0f, 1.0f));
+          model = glm::scale(model, glm::vec3(poses[i][3]));
 
           glUseProgram(colorShaderProgram);
           glUniformMatrix4fv(glGetUniformLocation(colorShaderProgram, "view"),
@@ -469,19 +464,7 @@ int main()
         //Display
         glfwSwapBuffers(window);
         glfwPollEvents();
-        
         frame_num++;
-        //Save Screenshot
-        #ifdef STATIC_IMAGES
-        char filename[] = "out_XX.bmp";
-        sprintf(filename, "out_%02d.bmp", frame_num);
-        SOIL_save_screenshot
-	(
-		filename,
-		SOIL_SAVE_TYPE_BMP,
-		0, 0, 800, 600
-	);
-        #endif
     }
 
     // --- Cleanup/Shutdown ---
