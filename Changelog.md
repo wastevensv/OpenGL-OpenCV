@@ -5,6 +5,13 @@ This is an informal changelog for an informal project. The general format should
 * Reorganize GL-Squares into multiple functions.
 * Render different types of models on different sticky notes.
 
+## [2016-06-17]
+### Additions
+* Started on reorganizing GL-Squares.
+  * Moved some CV code from draw loop to cvhelper.hpp.
+* Improved static image testing.
+  * Manually advance through images by pressing 'N', screenshot with 'W'.
+
 ## [2016-05-15]
 ### Additions
 * GL-Squares: Renders models on multiple sticky notes.
@@ -40,6 +47,7 @@ This is an informal changelog for an informal project. The general format should
 * Squares detects the outline and center of sticky notes.
 
 [olivierlacan/keep-a-changelog]: https://github.com/olivierlacan/keep-a-changelog
+[2016-05-17]: https://github.com/wastevensv/OpenGL-OpenCV/compare/e799e8...43585e
 [2016-05-15]: https://github.com/wastevensv/OpenGL-OpenCV/compare/0c5e82...e799e8
 [2016-05-14]: https://github.com/wastevensv/OpenGL-OpenCV/compare/962e4b...0c5e82
 [2016-05-13]: https://github.com/wastevensv/OpenGL-OpenCV/compare/006883...962e4b
