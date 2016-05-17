@@ -2,6 +2,7 @@
 This is an informal changelog for an informal project. The general format should be similar to [olivierlacan/keep-a-changelog]. This is primarily for my own record keeping. However I hope to use this as an opportunity to form good habits. Constructive feedback is encouraged.
 
 ## To-Do
+* Reorganize GL-Squares into multiple functions.
 * Render different types of models on different sticky notes.
 
 ## [2016-05-15]
